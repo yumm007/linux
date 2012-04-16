@@ -19,22 +19,30 @@ echo 'set multiplot layout '$n',1' >> conf
 echo 'set autoscale' >> conf
 echo 'set xdata time' >> conf
 echo 'set timefmt "%H:%M:%S"' >> conf
-echo 'set style data lines' >> conf
+echo 'set style data linespoints' >> conf
 
 n=`wc -l ap.list | cut -b -2`
+LP="w lp pt 7"
+
+echo -e "ID \t<=1 \t>1" > scan_num.log
 
 for i in `cat t01.list` 
 do
 	grep "\[$i\]" $LOG_FILE | ./collect_ap > tmp_dir/$i.log
-	echo 'set title "'$i'"' >> conf
-	echo -n 'plot "tmp_dir/'$i'.log" ' >> conf
-	for ((j = 2; j < $n+1; j++))
+	echo -n "$i" >> scan_num.log
+	grep "\[$i\]" $LOG_FILE | ./collect_scan_ap 2>> scan_num.log
+	echo "set title \"T01 $i\"" >> conf
+	echo -n "plot \"tmp_dir/$i.log\"" >> conf
+	for ((p = 1, j = 2; j < $n+1; j++, p++))
 	do
-		echo -n ' using 1:'$j', '\'\'' ' >> conf
+		echo -n " using 1:$j $LP title \"AP$p\", "\'\' >> conf
 	done
-		echo  ' using 1:'$j >> conf
+	echo  " using 1:$j $LP title \"AP$p\"" >> conf
+
 done
 
 cat conf | gnuplot
-rm -rf conf ap.list t01.list tmp_dir/
+cat scan_num_ap.conf | gnuplot
+
+rm -rf conf ap.list t01.list tmp_dir/ scan_num.log
 
