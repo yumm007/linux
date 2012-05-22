@@ -21,8 +21,8 @@ struct id_arr_t *id_arr;
 
 //	ret 0: 	select timeout
 //	ret 1:	socket fd ready
-//	ret 2:	command fd ready
-//	ret 3:	cocket and command fd ready
+//	ret 2:	init fd ready
+//	ret 3:	cocket and init fd ready
 
 static int wait_for_select(void) {
     struct timeval select_timeout = {3, 0};
@@ -30,7 +30,7 @@ static int wait_for_select(void) {
     int ret1 = 0,ret2, max_fd;
     
     FD_ZERO(&fdread);
-    //FD_SET(cmd_d, &fdread);	//do not swap those 2 line
+    FD_SET(cmd_d, &fdread);	//do not swap those 2 line
     FD_SET(sock_d, &fdread);
     select_timeout.tv_sec = 3;
 	
@@ -43,13 +43,6 @@ static int wait_for_select(void) {
 
     return ((ret1 << 1) | ret2);
     
-}
-
-static void process_cmd(int cmd_d) {
-	char buf[BUF_SIZE] = {0};
-
-	fread(buf, 1, BUF_SIZE, LOG_FDS[SEND_MSG_FROM_FILE_ID]);
-    fprintf(stderr, "process_cmd(): %s\n", buf);
 }
 
 static void print_online(void) {
@@ -109,11 +102,11 @@ int main(int argc, char *argv[]) {
 			process_socket(sock_d);
 			break;
 	    case 2:
-			process_cmd(cmd_d);
+			process_socket(cmd_d);
 			break;
 	    case 3:
 			process_socket(sock_d);
-			process_cmd(cmd_d);
+			process_socket(cmd_d);
 			break;
 	    default:
 			break;	

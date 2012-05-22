@@ -84,5 +84,6 @@ typedef struct NW_PKG {
 
 void open_socket(void);
 void process_socket(int sd);
+char *get_mac(const char *ip_addr);
 
 #endif

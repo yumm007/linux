@@ -1,4 +1,4 @@
-OBJECTS = t01_server_main.o apply_config.o send_recv.o
+OBJECTS = t01_server_main.o apply_config.o send_recv.o get_mac.o
 CFLAGS = -g -Wall
 
 server:	$(OBJECTS)

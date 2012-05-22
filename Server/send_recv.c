@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include "t01_server.h"
 #include "send_recv.h"
@@ -43,6 +44,23 @@ void open_socket(void) {
 
 	if (bind(sock_d, (const struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(stderr, "bind error.\n");
+		close(sock_d);
+		sock_d = -1;
+	}
+
+	if ((cmd_d = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		fprintf(stderr, "create socket error.\n");
+		return;
+	}
+
+	bzero(&sa, sizeof(sa));
+	sa.sin_family = AF_INET;
+	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_port = htons(5079);		//should be from configrution file
+
+	if (bind(cmd_d, (const struct sockaddr *)&sa, sizeof(sa)) < 0) {
+		fprintf(stderr, "bind error.\n");
+		close(cmd_d);
 		close(sock_d);
 		sock_d = -1;
 	}
@@ -129,6 +147,8 @@ static int get_config(char *id, char *buf, int buf_size) {
 	while (CONF_LINE_MAX && fgets(line, CONF_LINE_MAX, fp) != NULL)
 		process_one_line(line, buf, buf_size);
 
+	fprintf(stderr, "send conf file %s for client ", file_path);
+
 	return 0;
 }
 
@@ -206,10 +226,10 @@ void process_socket(int sd) {
 				case PKG_MTH_GET_DEV_CONF:
 					pkg->header.pkg_type = MTH_RET;
 					print_timestr(stderr);
-					if (get_config((char *)pkg->id.pkg_from, (char *)pkg->mth_data.mth_val, \
+					if (get_config(get_mac(inet_ntoa(ca.sin_addr)), (char *)pkg->mth_data.mth_val, \
 						sizeof(pkg->mth_data.mth_val)) == 0) {
 						sendto(sd, buf, 1024, 0, (void *)&ca, sizeof(ca));
-						fprintf(stderr, "start send conf file for %s.\n", pkg->id.pkg_from);
+						fprintf(stderr, "%s from IP %s.\n", (char *)pkg->id.pkg_from, inet_ntoa(ca.sin_addr));
 					}
 					break;
 				default:
